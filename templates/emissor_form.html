@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}{% if emissor %}Editar Emissor – {{ emissor.nome }} – AleDocs{% else %}Novo Emissor – AleDocs{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9 col-lg-11">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{{ url_for('listar_emissores') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Voltar
+      </a>
+      <div>
+        <h3 class="fw-bold mb-0 text-primary-custom">
+          {% if emissor %}
+            <i class="bi bi-pencil-fill me-2"></i>Editar Emissor
+          {% else %}
+            <i class="bi bi-person-badge-fill me-2"></i>Novo Emissor
+          {% endif %}
+        </h3>
+        <small class="text-muted">Dados do profissional/empresa responsável pela emissão dos documentos.</small>
+      </div>
+    </div>
+
+    <form method="POST" novalidate id="formEmissor">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-primary">
+          <i class="bi bi-person-vcard-fill me-2"></i>Dados Principais
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label class="form-label fw-semibold" for="nome">Nome do Emissor <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="nome" name="nome" value="{{ dados.get('nome', '') }}" required maxlength="200" placeholder="Nome completo ou razão social">
+              <div class="invalid-feedback">Informe o nome do emissor.</div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" for="documento">CPF / CNPJ <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="documento" name="documento" value="{{ dados.get('documento', '') }}" required maxlength="20" placeholder="Documento do emissor">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="nacionalidade">Nacionalidade</label>
+              <input type="text" class="form-control" id="nacionalidade" name="nacionalidade" value="{{ dados.get('nacionalidade', '') }}" maxlength="80" placeholder="Ex.: Brasileira">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="estado_civil">Estado Civil</label>
+              <select class="form-select" id="estado_civil" name="estado_civil">
+                {% set ec = dados.get('estado_civil', '') %}
+                <option value="">— Selecione —</option>
+                <option value="Solteiro(a)" {% if ec == 'Solteiro(a)' %}selected{% endif %}>Solteiro(a)</option>
+                <option value="Casado(a)" {% if ec == 'Casado(a)' %}selected{% endif %}>Casado(a)</option>
+                <option value="Divorciado(a)" {% if ec == 'Divorciado(a)' %}selected{% endif %}>Divorciado(a)</option>
+                <option value="Viúvo(a)" {% if ec == 'Viúvo(a)' %}selected{% endif %}>Viúvo(a)</option>
+                <option value="União Estável" {% if ec == 'União Estável' %}selected{% endif %}>União Estável</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" for="profissao">Profissão / Cargo</label>
+              <input type="text" class="form-control" id="profissao" name="profissao" value="{{ dados.get('profissao', '') }}" maxlength="100" placeholder="Ex.: Agrimensora, Advogado(a)">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold" for="registro_tipo">Tipo de Registro</label>
+              <input type="text" class="form-control" id="registro_tipo" name="registro_tipo" value="{{ dados.get('registro_tipo', '') }}" maxlength="30" placeholder="Registro">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="registro_numero">Nº do Registro</label>
+              <input type="text" class="form-control" id="registro_numero" name="registro_numero" value="{{ dados.get('registro_numero', '') }}" maxlength="40" placeholder="Ex.: 123456/MG">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-info">
+          <i class="bi bi-telephone-fill me-2"></i>Contato e Endereço
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="telefone">Telefone</label>
+              <input type="text" class="form-control" id="telefone" name="telefone" value="{{ dados.get('telefone', '') }}" maxlength="20" placeholder="(00) 90000-0000">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="email">E-mail</label>
+              <input type="email" class="form-control" id="email" name="email" value="{{ dados.get('email', '') }}" maxlength="150" placeholder="email@exemplo.com">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="endereco">Endereço</label>
+              <input type="text" class="form-control" id="endereco" name="endereco" value="{{ dados.get('endereco', '') }}" maxlength="200" placeholder="Logradouro e número">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold" for="cidade">Cidade</label>
+              <input type="text" class="form-control" id="cidade" name="cidade" value="{{ dados.get('cidade', '') }}" maxlength="100">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="estado">UF</label>
+              <select class="form-select" id="estado" name="estado">
+                <option value="">—</option>
+                {% set ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] %}
+                {% for uf in ufs %}
+                  <option value="{{ uf }}" {% if dados.get('estado') == uf %}selected{% endif %}>{{ uf }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-light fw-semibold text-secondary">
+          <i class="bi bi-chat-left-text-fill me-2"></i>Observações
+        </div>
+        <div class="card-body p-4">
+          <textarea class="form-control" id="observacoes" name="observacoes" rows="3" maxlength="1000" placeholder="Informações adicionais do emissor...">{{ dados.get('observacoes', '') }}</textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <a href="{{ url_for('listar_emissores') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-lg me-1"></i>Cancelar
+        </a>
+        <button type="submit" class="btn btn-success btn-lg px-5">
+          <i class="bi bi-save-fill me-2"></i>{% if emissor %}Salvar Alterações{% else %}Salvar Emissor{% endif %}
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+  const form = document.getElementById('formEmissor');
+  form.addEventListener('submit', function (event) {
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    form.classList.add('was-validated');
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,445 @@
+{% extends 'base.html' %}
+{% block title %}{% if cliente %}Editar – {{ cliente.nome }} – AleDocs{% else %}Novo Cliente – AleDocs{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9 col-lg-11">
+
+    <!-- Cabeçalho -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Voltar
+      </a>
+      <div>
+        <h3 class="fw-bold mb-0 text-primary-custom">
+          {% if cliente %}
+            <i class="bi bi-pencil-fill me-2"></i>Editar Cliente
+          {% else %}
+            <i class="bi bi-person-plus-fill me-2"></i>Novo Cliente
+          {% endif %}
+        </h3>
+        {% if cliente %}
+          <small class="text-muted">Atualize os dados de <strong>{{ cliente.nome }}</strong></small>
+        {% else %}
+          <small class="text-muted">Preencha os dados e clique em Salvar para ir à geração de documentos.</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <form method="POST" novalidate id="formCliente">
+      <!-- ── Dados Pessoais ─────────────────────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-primary">
+          <i class="bi bi-person-fill me-2"></i>Dados Pessoais
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+
+            <div class="col-md-8">
+              <label class="form-label fw-semibold" for="nome">
+                Nome completo <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="nome" name="nome"
+                     value="{{ dados.get('nome', '') }}" required
+                     placeholder="Nome completo do cliente" maxlength="200">
+              <div class="invalid-feedback">O nome é obrigatório.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="cpf_cnpj">CPF / CNPJ</label>
+              <input type="text" class="form-control" id="cpf_cnpj" name="cpf_cnpj"
+                     value="{{ dados.get('cpf_cnpj', '') }}"
+                     placeholder="000.000.000-00 ou 00.000.000/0001-00" maxlength="20">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="rg">RG / Identidade</label>
+              <input type="text" class="form-control" id="rg" name="rg"
+                     value="{{ dados.get('rg', '') }}"
+                     placeholder="Número do RG ou CNH" maxlength="30">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="orgao_expedidor">Órgão Expedidor</label>
+              <input type="text" class="form-control" id="orgao_expedidor" name="orgao_expedidor"
+                     value="{{ dados.get('orgao_expedidor', '') }}"
+                     placeholder="Ex.: SSP/MG" maxlength="30">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="profissao">Profissão</label>
+              <input type="text" class="form-control" id="profissao" name="profissao"
+                     value="{{ dados.get('profissao', '') }}"
+                     placeholder="Ex.: Agricultor, Empresário" maxlength="100">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="estado_civil">Estado Civil</label>
+              <select class="form-select" id="estado_civil" name="estado_civil">
+                {% set ec = dados.get('estado_civil', '') %}
+                <option value="">— Selecione —</option>
+                <option value="Solteiro(a)"    {% if ec == 'Solteiro(a)'    %}selected{% endif %}>Solteiro(a)</option>
+                <option value="Casado(a)"      {% if ec == 'Casado(a)'      %}selected{% endif %}>Casado(a)</option>
+                <option value="Divorciado(a)"  {% if ec == 'Divorciado(a)'  %}selected{% endif %}>Divorciado(a)</option>
+                <option value="Viúvo(a)"       {% if ec == 'Viúvo(a)'       %}selected{% endif %}>Viúvo(a)</option>
+                <option value="União Estável"  {% if ec == 'União Estável'  %}selected{% endif %}>União Estável</option>
+              </select>
+            </div>
+
+            <!-- Cônjuge (exibido quando casado ou união estável) -->
+            <div class="col-md-5" id="bloco_conjuge" style="{% if dados.get('estado_civil','') not in ['Casado(a)','União Estável'] %}display:none{% endif %}">
+              <label class="form-label fw-semibold" for="nome_conjuge">Nome do Cônjuge / Companheiro(a)</label>
+              <input type="text" class="form-control" id="nome_conjuge" name="nome_conjuge"
+                     value="{{ dados.get('nome_conjuge', '') }}"
+                     placeholder="Nome completo do cônjuge" maxlength="200">
+            </div>
+
+            <div class="col-md-3" id="bloco_cpf_conjuge" style="{% if dados.get('estado_civil','') not in ['Casado(a)','União Estável'] %}display:none{% endif %}">
+              <label class="form-label fw-semibold" for="cpf_conjuge">CPF do Cônjuge</label>
+              <input type="text" class="form-control" id="cpf_conjuge" name="cpf_conjuge"
+                     value="{{ dados.get('cpf_conjuge', '') }}"
+                     placeholder="000.000.000-00" maxlength="14">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Contato ────────────────────────────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-info">
+          <i class="bi bi-telephone-fill me-2"></i>Contato
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="telefone">Telefone / WhatsApp</label>
+              <input type="text" class="form-control" id="telefone" name="telefone"
+                     value="{{ dados.get('telefone', '') }}"
+                     placeholder="(00) 90000-0000" maxlength="20">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="email">E-mail</label>
+              <input type="email" class="form-control" id="email" name="email"
+                     value="{{ dados.get('email', '') }}"
+                     placeholder="email@exemplo.com" maxlength="150">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Endereço ───────────────────────────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-secondary">
+          <i class="bi bi-house-fill me-2"></i>Endereço
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label class="form-label fw-semibold" for="endereco">Logradouro</label>
+              <input type="text" class="form-control" id="endereco" name="endereco"
+                     value="{{ dados.get('endereco', '') }}"
+                     placeholder="Rua, Rodovia, Linha, etc." maxlength="200">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" for="complemento">Complemento</label>
+              <input type="text" class="form-control" id="complemento" name="complemento"
+                     value="{{ dados.get('complemento', '') }}"
+                     placeholder="Nº, Apto, Comunidade, etc." maxlength="100">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" for="cidade">Cidade</label>
+              <input type="text" class="form-control" id="cidade" name="cidade"
+                     value="{{ dados.get('cidade', '') }}" maxlength="100">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold" for="estado">Estado (UF)</label>
+              <select class="form-select" id="estado" name="estado">
+                <option value="">—</option>
+                {% set ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] %}
+                {% for uf in ufs %}
+                  <option value="{{ uf }}" {% if dados.get('estado') == uf %}selected{% endif %}>{{ uf }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="cep">CEP</label>
+              <input type="text" class="form-control" id="cep" name="cep"
+                     value="{{ dados.get('cep', '') }}"
+                     placeholder="00000-000" maxlength="10">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Dados do Imóvel ────────────────────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-warning">
+          <i class="bi bi-map-fill me-2"></i>Dados do Imóvel Rural
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+
+            <div class="col-md-8">
+              <label class="form-label fw-semibold" for="nome_propriedade">Nome da Propriedade</label>
+              <input type="text" class="form-control" id="nome_propriedade" name="nome_propriedade"
+                     value="{{ dados.get('nome_propriedade', '') }}"
+                     placeholder="Ex.: Fazenda São João, Sítio Boa Sorte" maxlength="200">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="matricula_imovel">Matrícula do Imóvel (CRI)</label>
+              <input type="text" class="form-control" id="matricula_imovel" name="matricula_imovel"
+                     value="{{ dados.get('matricula_imovel', '') }}"
+                     placeholder="Nº da matrícula no Cartório" maxlength="50">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="comarca">Comarca (Cartório de Registro)</label>
+              <input type="text" class="form-control" id="comarca" name="comarca"
+                     value="{{ dados.get('comarca', '') }}"
+                     placeholder="Comarca do CRI onde está registrado" maxlength="100">
+            </div>
+
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" for="municipio_imovel">Município do Imóvel</label>
+              <input type="text" class="form-control" id="municipio_imovel" name="municipio_imovel"
+                     value="{{ dados.get('municipio_imovel', '') }}"
+                     placeholder="Município onde fica o imóvel" maxlength="100">
+              <div class="form-text">Se diferente da cidade do proprietário.</div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-semibold" for="uf_imovel">UF do Imóvel</label>
+              <select class="form-select" id="uf_imovel" name="uf_imovel">
+                <option value="">—</option>
+                {% set ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] %}
+                {% for uf in ufs %}
+                  <option value="{{ uf }}" {% if dados.get('uf_imovel') == uf %}selected{% endif %}>{{ uf }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="codigo_incra">Código INCRA / SNCR</label>
+              <input type="text" class="form-control" id="codigo_incra" name="codigo_incra"
+                     value="{{ dados.get('codigo_incra', '') }}"
+                     placeholder="Ex.: 123.456.789.0000-0" maxlength="30">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="numero_ccir">Número do CCIR</label>
+              <input type="text" class="form-control" id="numero_ccir" name="numero_ccir"
+                     value="{{ dados.get('numero_ccir', '') }}"
+                     placeholder="Certificado de Cadastro de Imóvel Rural" maxlength="40">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="numero_car">Número do CAR</label>
+              <input type="text" class="form-control" id="numero_car" name="numero_car"
+                     value="{{ dados.get('numero_car', '') }}"
+                     placeholder="Ex.: MG-3100104-XXXXX..." maxlength="80">
+            </div>
+
+            <hr class="my-1">
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="area_imovel">Área Georreferenciada</label>
+              <input type="text" class="form-control" id="area_imovel" name="area_imovel"
+                     value="{{ dados.get('area_imovel', '') }}"
+                     placeholder="Ex.: 150,00 ha ou 1.500.000,00 m²" maxlength="80">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="area_registrada">Área Registrada (Escritura)</label>
+              <input type="text" class="form-control" id="area_registrada" name="area_registrada"
+                     value="{{ dados.get('area_registrada', '') }}"
+                     placeholder="Área conforme matrícula/escritura" maxlength="80">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="perimetro_imovel">Perímetro do Imóvel (m)</label>
+              <input type="text" class="form-control" id="perimetro_imovel" name="perimetro_imovel"
+                     value="{{ dados.get('perimetro_imovel', '') }}"
+                     placeholder="Ex.: 4.820,55 m" maxlength="40">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="fuso_sirgas">Fuso / Sistema de Referência</label>
+              <input type="text" class="form-control" id="fuso_sirgas" name="fuso_sirgas"
+                     value="{{ dados.get('fuso_sirgas', '') }}"
+                     placeholder="Ex.: SIRGAS 2000 – Fuso 23S" maxlength="40">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" for="numero_sigef">Protocolo SIGEF</label>
+              <input type="text" class="form-control" id="numero_sigef" name="numero_sigef"
+                     value="{{ dados.get('numero_sigef', '') }}"
+                     placeholder="Nº após certificação no SIGEF/INCRA" maxlength="60">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Confrontações do Imóvel ────────────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header" style="background: linear-gradient(135deg,#4a6b15,#2d3c0f); color:#fff;">
+          <i class="bi bi-compass-fill me-2"></i>Confrontações do Imóvel
+          <small class="ms-2 fw-normal opacity-75">Proprietários vizinhos em cada divisa</small>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="confrontante_norte">
+                <i class="bi bi-arrow-up-circle-fill text-success me-1"></i>Norte / Nordeste
+              </label>
+              <input type="text" class="form-control" id="confrontante_norte" name="confrontante_norte"
+                     value="{{ dados.get('confrontante_norte', '') }}"
+                     placeholder="Nome do proprietário confrontante ao norte" maxlength="200">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="confrontante_sul">
+                <i class="bi bi-arrow-down-circle-fill text-danger me-1"></i>Sul / Sudoeste
+              </label>
+              <input type="text" class="form-control" id="confrontante_sul" name="confrontante_sul"
+                     value="{{ dados.get('confrontante_sul', '') }}"
+                     placeholder="Nome do proprietário confrontante ao sul" maxlength="200">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="confrontante_leste">
+                <i class="bi bi-arrow-right-circle-fill text-warning me-1"></i>Leste / Este
+              </label>
+              <input type="text" class="form-control" id="confrontante_leste" name="confrontante_leste"
+                     value="{{ dados.get('confrontante_leste', '') }}"
+                     placeholder="Nome do proprietário confrontante a leste" maxlength="200">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" for="confrontante_oeste">
+                <i class="bi bi-arrow-left-circle-fill text-info me-1"></i>Oeste / Poente
+              </label>
+              <input type="text" class="form-control" id="confrontante_oeste" name="confrontante_oeste"
+                     value="{{ dados.get('confrontante_oeste', '') }}"
+                     placeholder="Nome do proprietário confrontante a oeste" maxlength="200">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Dados do Serviço Contratado ───────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header card-header-success">
+          <i class="bi bi-currency-dollar me-2"></i>Dados do Serviço Contratado
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" for="valor_servico">Valor Total do Serviço (R$)</label>
+              <input type="text" class="form-control" id="valor_servico" name="valor_servico"
+                     value="{{ dados.get('valor_servico', '') }}"
+                     placeholder="Ex.: R$ 5.000,00" maxlength="60">
+            </div>
+
+            <div class="col-md-7">
+              <label class="form-label fw-semibold" for="forma_pagamento">Forma de Pagamento</label>
+              <input type="text" class="form-control" id="forma_pagamento" name="forma_pagamento"
+                     value="{{ dados.get('forma_pagamento', '') }}"
+                     placeholder="Ex.: 50% entrada + 50% na entrega / Dação em pagamento" maxlength="200">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Observações ────────────────────────────────────────── -->
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-light fw-semibold text-secondary">
+          <i class="bi bi-chat-text-fill me-2"></i>Observações
+        </div>
+        <div class="card-body p-4">
+          <textarea class="form-control" id="observacoes" name="observacoes"
+                    rows="3" maxlength="1000"
+                    placeholder="Anotações internas, pendências, informações relevantes...">{{ dados.get('observacoes', '') }}</textarea>
+        </div>
+      </div>
+
+      <!-- Botões -->
+      <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-lg me-1"></i>Cancelar
+        </a>
+        <button type="submit" class="btn btn-success btn-lg px-5">
+          <i class="bi bi-save-fill me-2"></i>
+          {% if cliente %}Salvar Alterações{% else %}Salvar e Gerar Documentos{% endif %}
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Validação Bootstrap
+(function () {
+  'use strict';
+  const form = document.getElementById('formCliente');
+  form.addEventListener('submit', function (event) {
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    form.classList.add('was-validated');
+  });
+
+  // Máscara simples de CPF/CNPJ
+  const cpfInput = document.getElementById('cpf_cnpj');
+  cpfInput.addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '');
+    if (v.length <= 11) {
+      v = v.replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      v = v.replace(/^(\d{2})(\d)/, '$1.$2')
+            .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+            .replace(/\.(\d{3})(\d)/, '.$1/$2')
+            .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    this.value = v;
+  });
+
+  // Máscara CPF cônjuge
+  const cpfConj = document.getElementById('cpf_conjuge');
+  cpfConj.addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    this.value = v;
+  });
+
+  // Máscara CEP
+  document.getElementById('cep').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2');
+    this.value = v;
+  });
+
+  // Mostrar/ocultar campos de cônjuge
+  const ecSelect = document.getElementById('estado_civil');
+  function toggleConjuge() {
+    const mostrar = ['Casado(a)', 'União Estável'].includes(ecSelect.value);
+    document.getElementById('bloco_conjuge').style.display     = mostrar ? '' : 'none';
+    document.getElementById('bloco_cpf_conjuge').style.display = mostrar ? '' : 'none';
+  }
+  ecSelect.addEventListener('change', toggleConjuge);
+})();
+</script>
+{% endblock %}

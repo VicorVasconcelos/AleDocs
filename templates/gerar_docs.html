@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Gerar Documentos – {{ cliente.nome }} – AleDocs{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9 col-lg-11">
+
+    <!-- Cabeçalho -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Voltar
+      </a>
+      <div>
+        <h3 class="fw-bold mb-0 text-primary-custom">
+          <i class="bi bi-file-earmark-arrow-down-fill me-2"></i>Gerar Documentos
+        </h3>
+        <small class="text-muted">Selecione os documentos que deseja gerar para este cliente.</small>
+      </div>
+    </div>
+
+    <!-- Card: Resumo do Cliente -->
+    <div class="card border-0 shadow mb-4 cliente-resumo-card">
+      <div class="card-body p-0">
+        <div class="d-flex align-items-center gap-3 p-3 border-bottom">
+          <div class="avatar-circle bg-primary-custom text-white">
+            {{ cliente.nome[0].upper() }}
+          </div>
+          <div class="flex-fill">
+            <h5 class="mb-0 fw-bold">{{ cliente.nome }}</h5>
+            <small class="text-muted">
+              {% if cliente.cpf_cnpj %}CPF/CNPJ: {{ cliente.cpf_cnpj }} &nbsp;|&nbsp;{% endif %}
+              {% if cliente.telefone %}<i class="bi bi-telephone me-1"></i>{{ cliente.telefone }}{% endif %}
+            </small>
+          </div>
+          <a href="{{ url_for('editar_cliente', cliente_id=cliente.id) }}"
+             class="btn btn-sm btn-outline-secondary" title="Editar dados do cliente">
+            <i class="bi bi-pencil-fill me-1"></i>Editar
+          </a>
+        </div>
+        <div class="row g-0 p-3">
+          {% if cliente.nome_propriedade %}
+          <div class="col-sm-6 col-lg-3 info-item">
+            <span class="info-label"><i class="bi bi-map me-1"></i>Propriedade</span>
+            <span class="info-value">{{ cliente.nome_propriedade }}</span>
+          </div>
+          {% endif %}
+          {% if cliente.matricula_imovel %}
+          <div class="col-sm-6 col-lg-3 info-item">
+            <span class="info-label"><i class="bi bi-bookmark me-1"></i>Matrícula</span>
+            <span class="info-value">{{ cliente.matricula_imovel }}</span>
+          </div>
+          {% endif %}
+          {% if cliente.comarca %}
+          <div class="col-sm-6 col-lg-3 info-item">
+            <span class="info-label"><i class="bi bi-building me-1"></i>Comarca</span>
+            <span class="info-value">{{ cliente.comarca }}</span>
+          </div>
+          {% endif %}
+          {% if cliente.area_imovel %}
+          <div class="col-sm-6 col-lg-3 info-item">
+            <span class="info-label"><i class="bi bi-rulers me-1"></i>Área</span>
+            <span class="info-value">{{ cliente.area_imovel }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Form: Seleção de Documentos -->
+    <form method="POST" action="{{ url_for('processar_geracao') }}" id="formGerar">
+      <input type="hidden" name="cliente_id" value="{{ cliente.id }}">
+
+      <div class="card border-0 shadow mb-4">
+        <div class="card-header card-header-info d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-person-badge-fill me-2"></i>Emissor do Documento</span>
+          <a href="{{ url_for('novo_emissor') }}" class="btn btn-sm btn-light">
+            <i class="bi bi-plus-circle me-1"></i>Novo Emissor
+          </a>
+        </div>
+        <div class="card-body p-3">
+          {% if emissores %}
+            <label class="form-label fw-semibold" for="emissor_id">Selecione quem está emitindo os documentos</label>
+            <select id="emissor_id" name="emissor_id" class="form-select" required>
+              <option value="">— Selecione um emissor —</option>
+              {% for e in emissores %}
+                <option value="{{ e.id }}" {% if loop.first %}selected{% endif %}>
+                  {{ e.nome }}{% if e.registro_tipo or e.registro_numero %} — {{ e.registro_tipo }} {{ e.registro_numero }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">O nome e os dados profissionais do emissor serão usados nos cabeçalhos e assinaturas.</div>
+          {% else %}
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              Nenhum emissor cadastrado. Cadastre um emissor para liberar a geração dos documentos.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card border-0 shadow mb-4">
+        <div class="card-header card-header-primary d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-file-earmark-text me-2"></i>Selecione os Documentos</span>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-light" onclick="selecionarTodos(true)">
+              <i class="bi bi-check-all me-1"></i>Todos
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="selecionarTodos(false)">
+              <i class="bi bi-x me-1"></i>Nenhum
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-3">
+          <div class="row g-3">
+            {% for doc in documentos %}
+            <div class="col-md-6">
+              <label class="doc-card {% if loop.index <= 2 %}selected{% endif %}" id="label-{{ doc.id }}">
+                <input type="checkbox" name="documentos" value="{{ doc.id }}"
+                       class="doc-checkbox d-none"
+                       {% if loop.index <= 2 %}checked{% endif %}
+                       onchange="atualizarCard(this)">
+                <div class="doc-card-inner p-3">
+                  <div class="d-flex align-items-start gap-3">
+                    <div class="doc-icon">
+                      <i class="bi {{ doc.icon }} fs-3"></i>
+                    </div>
+                    <div class="flex-fill">
+                      <div class="fw-semibold lh-sm">{{ doc.nome }}</div>
+                      <div class="text-muted small mt-1">{{ doc.descricao }}</div>
+                    </div>
+                    <div class="check-badge">
+                      <i class="bi bi-check-circle-fill fs-5"></i>
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Contador + Botão -->
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="text-muted small">
+          <i class="bi bi-info-circle me-1"></i>
+          <span id="contadorDocs">2</span> documento(s) selecionado(s) — será baixado um arquivo <strong>.zip</strong>.
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg px-5" id="btnGerar" {% if not emissores %}disabled{% endif %}>
+          <i class="bi bi-download me-2"></i>Gerar e Baixar Documentos
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function atualizarCard(checkbox) {
+  const label = checkbox.closest('label');
+  if (checkbox.checked) {
+    label.classList.add('selected');
+  } else {
+    label.classList.remove('selected');
+  }
+  atualizarContador();
+}
+
+function selecionarTodos(selecionar) {
+  document.querySelectorAll('.doc-checkbox').forEach(cb => {
+    cb.checked = selecionar;
+    const label = cb.closest('label');
+    if (selecionar) label.classList.add('selected');
+    else label.classList.remove('selected');
+  });
+  atualizarContador();
+}
+
+function atualizarContador() {
+  const total = document.querySelectorAll('.doc-checkbox:checked').length;
+  document.getElementById('contadorDocs').textContent = total;
+  document.getElementById('btnGerar').disabled = (total === 0);
+}
+
+// Download: mostrar feedback ao clicar
+document.getElementById('formGerar').addEventListener('submit', function () {
+  const btn = document.getElementById('btnGerar');
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Gerando…';
+  btn.disabled = true;
+  // Re-habilitar após 5s para o caso de erro
+  setTimeout(() => {
+    btn.innerHTML = '<i class="bi bi-download me-2"></i>Gerar e Baixar Documentos';
+    btn.disabled = false;
+  }, 8000);
+});
+
+atualizarContador();
+</script>
+{% endblock %}
