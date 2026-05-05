@@ -216,4 +216,4 @@ AleDocs/
 
 ---
 
-Desenvolvido com muito amor, carinho e cafe ☕ para minha querida esposa Alessandra ❤️.
+Desenvolvido com muito amor, carinho e cafe ☕❤️.
